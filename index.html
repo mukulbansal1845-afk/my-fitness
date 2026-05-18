@@ -712,7 +712,7 @@
 
 <script>
   // ─── PASTE YOUR APPS SCRIPT URL HERE AFTER DEPLOYMENT ───
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaoX9CEgwluKXo9iKSHotk7tpPGoymJS2lDCS5Kr8RIPnKXSKHh0SsaX5krqyugeA9/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytsR-6O9DB-xjIuBjF6dCWHwl4rYe8HjOCvJTJIF7mK9ivyFk2tBHtFCsSEAm7UGdS/exec';
   // ────────────────────────────────────────────────────────
 
   const workoutDays = {
@@ -859,17 +859,13 @@
       const json = await res.json();
       if (!json.data || json.data.length === 0) return;
 
-      // Get most recent date's sets
-      const dates = [...new Set(json.data.map(e => String(e.date)))].sort();
-      const latest = dates[dates.length - 1];
-      const sets = json.data.filter(e => String(e.date) === latest).sort((a,b) => a.setNo - b.setNo);
+      const sets = json.data.sort((a, b) => a.setNo - b.setNo);
 
-      // Cache it
       if (!sessionCache[dayKey]) sessionCache[dayKey] = {};
       sessionCache[dayKey][exName] = sets;
 
       prefillSets(dayIdx, exIdx, sets);
-    } catch(e) { /* silently fail — inputs stay empty */ }
+    } catch(e) { /* silently fail */ }
   }
 
   function prefillSets(dayIdx, exIdx, sets) {
@@ -903,14 +899,13 @@
 
   function saveExercise(dayIdx, exIdx, exerciseName) {
     const day = workoutDays[dayIdx];
-    const today = new Date().toISOString().split('T')[0];
     const entries = [];
 
     document.getElementById('isets-' + dayIdx + '-' + exIdx).querySelectorAll('.set-row').forEach((row, j) => {
       const w = row.querySelector('.w-input').value.trim();
       const r = row.querySelector('.r-input').value.trim();
       if (w !== '' || r !== '') {
-        entries.push({ date: today, day: day.label + ' - ' + day.name, exercise: exerciseName, setNo: j+1, weight: parseFloat(w)||0, reps: parseInt(r)||0 });
+        entries.push({ day: day.label + ' - ' + day.name, exercise: exerciseName, setNo: j+1, weight: parseFloat(w)||0, reps: parseInt(r)||0 });
       }
     });
 
