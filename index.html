@@ -813,6 +813,9 @@
 
   buildLogSection(0);
 
+  // In-memory cache for current session
+  const sessionCache = {};
+
   function toggleExercise(dayIdx, exIdx) {
     const day = workoutDays[dayIdx];
     if (!day) return;
@@ -835,7 +838,61 @@
       document.getElementById('chev-' + dayIdx + '-' + exIdx).textContent = '▲';
       const items = document.getElementById('day-' + dayIdx).querySelectorAll('.exercise-item');
       if (items[exIdx]) items[exIdx].classList.add('open');
+
+      // Try to prefill from cache or Google Sheets
+      const dayKey = day.label + ' - ' + day.name;
+      const exName = day.exercises[exIdx];
+      const cached = sessionCache[dayKey] && sessionCache[dayKey][exName];
+      if (cached) {
+        prefillSets(dayIdx, exIdx, cached);
+      } else {
+        fetchAndPrefill(dayIdx, exIdx, dayKey, exName);
+      }
     }
+  }
+
+  async function fetchAndPrefill(dayIdx, exIdx, dayKey, exName) {
+    try {
+      const url = SCRIPT_URL + '?day=' + encodeURIComponent(dayKey) + '&exercise=' + encodeURIComponent(exName);
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (!json.data || json.data.length === 0) return;
+
+      // Get most recent date's sets
+      const dates = [...new Set(json.data.map(e => String(e.date)))].sort();
+      const latest = dates[dates.length - 1];
+      const sets = json.data.filter(e => String(e.date) === latest).sort((a,b) => a.setNo - b.setNo);
+
+      // Cache it
+      if (!sessionCache[dayKey]) sessionCache[dayKey] = {};
+      sessionCache[dayKey][exName] = sets;
+
+      prefillSets(dayIdx, exIdx, sets);
+    } catch(e) { /* silently fail — inputs stay empty */ }
+  }
+
+  function prefillSets(dayIdx, exIdx, sets) {
+    if (!sets || sets.length === 0) return;
+    const wrapper = document.getElementById('isets-' + dayIdx + '-' + exIdx);
+
+    // Add rows if needed
+    while (wrapper.querySelectorAll('.set-row').length < sets.length) {
+      const n = wrapper.querySelectorAll('.set-row').length + 1;
+      wrapper.insertAdjacentHTML('beforeend', makeSetRow(n));
+    }
+
+    const rows = wrapper.querySelectorAll('.set-row');
+    sets.forEach((set, j) => {
+      if (rows[j]) {
+        rows[j].querySelector('.w-input').value = set.weight || '';
+        rows[j].querySelector('.r-input').value = set.reps || '';
+      }
+    });
+
+    // Show subtle indicator
+    const tag = document.getElementById('savedtag-' + dayIdx + '-' + exIdx);
+    if (tag) tag.textContent = '↩ last session';
   }
 
   function addInlineSet(dayIdx, exIdx) {
@@ -858,6 +915,10 @@
     });
 
     if (entries.length === 0) { alert('Enter at least one set first.'); return; }
+
+    // Cache for this session
+    if (!sessionCache[day.label + ' - ' + day.name]) sessionCache[day.label + ' - ' + day.name] = {};
+    sessionCache[day.label + ' - ' + day.name][exerciseName] = entries;
 
     const btn = document.getElementById('savebtn-' + dayIdx + '-' + exIdx);
     const tag = document.getElementById('savedtag-' + dayIdx + '-' + exIdx);
