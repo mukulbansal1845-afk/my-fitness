@@ -644,31 +644,6 @@
 <!-- Hidden iframe for form submission — bypasses CORS from file:// -->
 <iframe name="hidden_save_frame" style="display:none" aria-hidden="true"></iframe>
 
-<!-- ===== LOG SESSION MODAL ===== -->
-<div id="logModal" class="modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="modalTitle">Log Session</div>
-        <div class="modal-date" id="modalDate"></div>
-      </div>
-      <button class="close-btn" onclick="closeModal()">✕</button>
-    </div>
-
-    <!-- Input Section -->
-    <div id="inputSection">
-      <div id="exerciseInputs"></div>
-      <div class="modal-actions">
-        <button class="save-btn" id="saveBtn" onclick="saveSession()">💾 Save to Google Sheets</button>
-        <button class="hist-btn" onclick="loadHistory()">📊 History</button>
-      </div>
-    </div>
-
-    <!-- History Section -->
-    <div id="historySection" style="display:none"></div>
-  </div>
-</div>
-
 <style>
   /* INLINE LOG SECTION */
   .inline-log-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
@@ -714,7 +689,7 @@
   .modal-actions { display:flex; gap:10px; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); position:sticky; bottom:0; background:var(--surface); padding-bottom:4px; }
   .save-btn { flex:1; background:var(--accent); color:#000; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:14px; cursor:pointer; font-family:var(--font-body); }
   .save-btn:disabled { opacity:0.6; cursor:not-allowed; }
-  .hist-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:13px 16px; font-size:13px; cursor:pointer; font-family:var(--font-body); white-space:nowrap; }
+
 
   /* LOG SESSION BUTTON */
   .log-session-btn { width:100%; background:rgba(240,192,64,0.09); border:1px solid rgba(240,192,64,0.3); color:var(--accent); border-radius:8px; padding:13px; font-size:14px; font-weight:600; cursor:pointer; margin-top:16px; font-family:var(--font-body); letter-spacing:0.5px; }
@@ -770,49 +745,6 @@
 
   let currentDayIdx = null;
 
-  function openLogModal(idx) {
-    currentDayIdx = idx;
-    const day = workoutDays[idx];
-    if (!day) return;
-
-    document.getElementById('modalTitle').textContent = day.label + ' — ' + day.name;
-    document.getElementById('modalDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-    // Build exercise inputs
-    const container = document.getElementById('exerciseInputs');
-    container.innerHTML = '';
-
-    const notSetup = SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE';
-    if (notSetup) {
-      container.insertAdjacentHTML('beforebegin', `
-        <div class="setup-warning">
-          <strong>⚠️ Google Sheets Not Connected Yet</strong>
-          <p>You can still fill in your sets below and save once you add the Apps Script URL. Check the setup instructions file.</p>
-        </div>
-      `);
-    }
-
-    day.exercises.forEach((ex, i) => {
-      const div = document.createElement('div');
-      div.className = 'ex-log-block';
-      div.innerHTML = `
-        <div class="ex-log-name">${ex}</div>
-        <div class="sets-wrapper" id="sets-${i}">
-          ${makeSetRow(1)}${makeSetRow(2)}${makeSetRow(3)}
-        </div>
-        <button class="add-set-btn" onclick="addSet(${i})">+ Add Set</button>
-      `;
-      container.appendChild(div);
-    });
-
-    document.getElementById('historySection').style.display = 'none';
-    document.getElementById('inputSection').style.display = 'block';
-    document.getElementById('saveBtn').textContent = '💾 Save to Google Sheets';
-    document.getElementById('saveBtn').disabled = false;
-    document.getElementById('logModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
   function makeSetRow(num) {
     return `
       <div class="set-row">
@@ -821,173 +753,6 @@
         <span class="set-x">×</span>
         <input type="number" class="r-input" placeholder="reps" min="0" inputmode="numeric">
       </div>`;
-  }
-
-  function addSet(i) {
-    const w = document.getElementById('sets-' + i);
-    const n = w.querySelectorAll('.set-row').length + 1;
-    w.insertAdjacentHTML('beforeend', makeSetRow(n));
-  }
-
-  function closeModal() {
-    document.getElementById('logModal').classList.remove('active');
-    document.body.style.overflow = '';
-    // Remove any setup warning
-    const warn = document.querySelector('.setup-warning');
-    if (warn) warn.remove();
-  }
-
-  async function saveSession() {
-    const day = workoutDays[currentDayIdx];
-    const today = new Date().toISOString().split('T')[0];
-    const entries = [];
-
-    day.exercises.forEach((ex, i) => {
-      const rows = document.getElementById('sets-' + i).querySelectorAll('.set-row');
-      rows.forEach((row, j) => {
-        const w = row.querySelector('.w-input').value.trim();
-        const r = row.querySelector('.r-input').value.trim();
-        if (w !== '' || r !== '') {
-          entries.push({
-            date: today,
-            day: day.label + ' - ' + day.name,
-            exercise: ex,
-            setNo: j + 1,
-            weight: parseFloat(w) || 0,
-            reps: parseInt(r) || 0
-          });
-        }
-      });
-    });
-
-    if (entries.length === 0) { alert('Please enter at least one set before saving.'); return; }
-
-    const btn = document.getElementById('saveBtn');
-    btn.textContent = '⏳ Saving...';
-    btn.disabled = true;
-
-    // 1️⃣ Save to localStorage (for instant History on this device)
-    try {
-      const all = JSON.parse(localStorage.getItem('workout_history') || '[]');
-      localStorage.setItem('workout_history', JSON.stringify([...all, ...entries]));
-    } catch(e) { console.warn('localStorage save failed', e); }
-
-    // 2️⃣ Send to Google Sheets via form (permanent backup, works from any origin)
-    if (SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = SCRIPT_URL;
-      form.target = 'hidden_save_frame';
-      form.style.display = 'none';
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'entries';
-      input.value = JSON.stringify(entries);
-      form.appendChild(input);
-      document.body.appendChild(form);
-      form.submit();
-      setTimeout(() => document.body.removeChild(form), 2000);
-    }
-
-    setTimeout(() => {
-      btn.textContent = `✅ Saved ${entries.length} sets!`;
-      setTimeout(() => { btn.textContent = '💾 Save to Google Sheets'; btn.disabled = false; }, 3000);
-    }, 800);
-  }
-
-  function loadHistory() {
-    const day = workoutDays[currentDayIdx];
-    const dayKey = day.label + ' - ' + day.name;
-    const hist = document.getElementById('historySection');
-    document.getElementById('inputSection').style.display = 'none';
-    hist.style.display = 'block';
-
-    // Show localStorage instantly first
-    const local = getLocal(dayKey);
-    renderHistory(hist, local, day.name, true);
-
-    // Then fetch from Google Sheets for cross-device data (no credentials needed with "Anyone" access)
-    const url = SCRIPT_URL + '?day=' + encodeURIComponent(dayKey);
-    fetch(url)
-      .then(r => r.json())
-      .then(json => {
-        if (!json.data || json.data.length === 0) return;
-        // Merge sheet data with local — deduplicate by date+exercise+setNo
-        const sheetData = json.data;
-        const localKeys = new Set(local.map(e => `${e.date}|${e.exercise}|${e.setNo}`));
-        const merged = [...local, ...sheetData.filter(e => !localKeys.has(`${e.date}|${e.exercise}|${e.setNo}`))];
-        // Save merged back to localStorage
-        try {
-          const all = JSON.parse(localStorage.getItem('workout_history') || '[]')
-            .filter(e => e.day !== dayKey);
-          localStorage.setItem('workout_history', JSON.stringify([...all, ...merged]));
-        } catch(e) {}
-        renderHistory(hist, merged, day.name, false);
-      })
-      .catch(() => {}); // silently keep localStorage version if fetch fails
-  }
-
-  function getLocal(dayKey) {
-    try {
-      return JSON.parse(localStorage.getItem('workout_history') || '[]').filter(e => e.day === dayKey);
-    } catch(e) { return []; }
-  }
-
-  function renderHistory(hist, data, dayName, isLoading) {
-    const loadingNote = isLoading ? '<div style="font-size:11px;color:var(--muted);margin-bottom:12px">⏳ Syncing from Google Sheets...</div>' : '';
-
-    if (data.length === 0 && !isLoading) {
-      hist.innerHTML = `
-        <div class="hist-top">
-          <span class="hist-top-title">History — ${dayName}</span>
-          <button class="hist-back-btn" onclick="showInputs()">← Back</button>
-        </div>
-        <div class="hist-empty">No sessions logged yet.<br>Log your first session today! 💪</div>`;
-      return;
-    }
-    if (data.length === 0) {
-      hist.innerHTML = `
-        <div class="hist-top">
-          <span class="hist-top-title">History — ${dayName}</span>
-          <button class="hist-back-btn" onclick="showInputs()">← Back</button>
-        </div>
-        ${loadingNote}<div class="hist-empty">No local sessions yet. Checking Google Sheets...</div>`;
-      return;
-    }
-
-    const byDate = {};
-    data.forEach(e => {
-      if (!byDate[e.date]) byDate[e.date] = {};
-      if (!byDate[e.date][e.exercise]) byDate[e.date][e.exercise] = [];
-      byDate[e.date][e.exercise].push(e);
-    });
-
-    let html = `
-      <div class="hist-top">
-        <span class="hist-top-title">History — ${dayName}</span>
-        <button class="hist-back-btn" onclick="showInputs()">← Back</button>
-      </div>${loadingNote}`;
-
-    Object.keys(byDate).sort().reverse().forEach(date => {
-      html += `<div class="hist-date-group"><div class="hist-date">📅 ${date}</div>`;
-      Object.keys(byDate[date]).forEach(ex => {
-        const sets = byDate[date][ex];
-        const setsText = sets.map(s => `${s.weight}kg × ${s.reps}`).join(' &nbsp;|&nbsp; ');
-        html += `
-          <div class="hist-ex-row">
-            <div class="hist-ex-name">${ex}</div>
-            <div class="hist-sets-row">${setsText}</div>
-          </div>`;
-      });
-      html += `</div>`;
-    });
-
-    hist.innerHTML = html;
-  }
-
-  function showInputs() {
-    document.getElementById('historySection').style.display = 'none';
-    document.getElementById('inputSection').style.display = 'block';
   }
 
   function switchTab(tab,el){
