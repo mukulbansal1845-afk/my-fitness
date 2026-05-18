@@ -722,7 +722,7 @@
 
 <script>
   // ─── PASTE YOUR APPS SCRIPT URL HERE AFTER DEPLOYMENT ───
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaoX9CEgwluKXo9iKSHotk7tpPGoymJS2lDCS5Kr8RIPnKXSKHh0SsaX5krqyugeA9/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaoX9CEgwIuKXo9iKSHotk7tpPGoymJS21DC5SKr8RIPnKXSKHh0SsaX5krqyugeA9/exec';
   // ────────────────────────────────────────────────────────
 
   const workoutDays = {
@@ -845,123 +845,129 @@
       });
     });
 
-    if (entries.length === 0) {
-      alert('Please enter at least one set before saving.');
-      return;
-    }
-
-    if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-      alert('⚠️ Apps Script URL not set yet!\n\nPlease follow the setup instructions in the Code.gs file, deploy the script, and paste the URL at the top of this HTML file where it says YOUR_APPS_SCRIPT_URL_HERE.');
-      return;
-    }
+    if (entries.length === 0) { alert('Please enter at least one set before saving.'); return; }
 
     const btn = document.getElementById('saveBtn');
     btn.textContent = '⏳ Saving...';
     btn.disabled = true;
 
+    // 1️⃣ Save to localStorage (for instant History on this device)
     try {
-      // Hidden form submission — bypasses CORS completely, works from file://
+      const all = JSON.parse(localStorage.getItem('workout_history') || '[]');
+      localStorage.setItem('workout_history', JSON.stringify([...all, ...entries]));
+    } catch(e) { console.warn('localStorage save failed', e); }
+
+    // 2️⃣ Send to Google Sheets via form (permanent backup, works from any origin)
+    if (SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = SCRIPT_URL;
       form.target = 'hidden_save_frame';
       form.style.display = 'none';
-
       const input = document.createElement('input');
       input.type = 'hidden';
       input.name = 'entries';
       input.value = JSON.stringify(entries);
       form.appendChild(input);
-
       document.body.appendChild(form);
       form.submit();
       setTimeout(() => document.body.removeChild(form), 2000);
-
-      // Wait 1.5s then confirm (form has no response we can read)
-      setTimeout(() => {
-        btn.textContent = `✅ Saved ${entries.length} sets!`;
-        setTimeout(() => {
-          btn.textContent = '💾 Save to Google Sheets';
-          btn.disabled = false;
-        }, 3000);
-      }, 1500);
-
-    } catch (err) {
-      alert('Error: ' + err.message);
-      btn.textContent = '💾 Save to Google Sheets';
-      btn.disabled = false;
     }
+
+    setTimeout(() => {
+      btn.textContent = `✅ Saved ${entries.length} sets!`;
+      setTimeout(() => { btn.textContent = '💾 Save to Google Sheets'; btn.disabled = false; }, 3000);
+    }, 800);
   }
 
-  async function loadHistory() {
+  function loadHistory() {
     const day = workoutDays[currentDayIdx];
+    const dayKey = day.label + ' - ' + day.name;
     const hist = document.getElementById('historySection');
     document.getElementById('inputSection').style.display = 'none';
     hist.style.display = 'block';
-    hist.innerHTML = '<div class="hist-empty">⏳ Loading history...</div>';
 
-    if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    // Show localStorage instantly first
+    const local = getLocal(dayKey);
+    renderHistory(hist, local, day.name, true);
+
+    // Then fetch from Google Sheets for cross-device data (no credentials needed with "Anyone" access)
+    const url = SCRIPT_URL + '?day=' + encodeURIComponent(dayKey);
+    fetch(url)
+      .then(r => r.json())
+      .then(json => {
+        if (!json.data || json.data.length === 0) return;
+        // Merge sheet data with local — deduplicate by date+exercise+setNo
+        const sheetData = json.data;
+        const localKeys = new Set(local.map(e => `${e.date}|${e.exercise}|${e.setNo}`));
+        const merged = [...local, ...sheetData.filter(e => !localKeys.has(`${e.date}|${e.exercise}|${e.setNo}`))];
+        // Save merged back to localStorage
+        try {
+          const all = JSON.parse(localStorage.getItem('workout_history') || '[]')
+            .filter(e => e.day !== dayKey);
+          localStorage.setItem('workout_history', JSON.stringify([...all, ...merged]));
+        } catch(e) {}
+        renderHistory(hist, merged, day.name, false);
+      })
+      .catch(() => {}); // silently keep localStorage version if fetch fails
+  }
+
+  function getLocal(dayKey) {
+    try {
+      return JSON.parse(localStorage.getItem('workout_history') || '[]').filter(e => e.day === dayKey);
+    } catch(e) { return []; }
+  }
+
+  function renderHistory(hist, data, dayName, isLoading) {
+    const loadingNote = isLoading ? '<div style="font-size:11px;color:var(--muted);margin-bottom:12px">⏳ Syncing from Google Sheets...</div>' : '';
+
+    if (data.length === 0 && !isLoading) {
       hist.innerHTML = `
         <div class="hist-top">
-          <span class="hist-top-title">History</span>
+          <span class="hist-top-title">History — ${dayName}</span>
           <button class="hist-back-btn" onclick="showInputs()">← Back</button>
         </div>
-        <div class="hist-empty">⚠️ Connect Google Sheets first to see history.</div>`;
+        <div class="hist-empty">No sessions logged yet.<br>Log your first session today! 💪</div>`;
+      return;
+    }
+    if (data.length === 0) {
+      hist.innerHTML = `
+        <div class="hist-top">
+          <span class="hist-top-title">History — ${dayName}</span>
+          <button class="hist-back-btn" onclick="showInputs()">← Back</button>
+        </div>
+        ${loadingNote}<div class="hist-empty">No local sessions yet. Checking Google Sheets...</div>`;
       return;
     }
 
-    try {
-      const url = SCRIPT_URL + '?day=' + encodeURIComponent(day.label + ' - ' + day.name);
-      const res = await fetch(url, { credentials: 'include' });
-      const json = await res.json();
+    const byDate = {};
+    data.forEach(e => {
+      if (!byDate[e.date]) byDate[e.date] = {};
+      if (!byDate[e.date][e.exercise]) byDate[e.date][e.exercise] = [];
+      byDate[e.date][e.exercise].push(e);
+    });
 
-      if (!json.data || json.data.length === 0) {
-        hist.innerHTML = `
-          <div class="hist-top">
-            <span class="hist-top-title">History</span>
-            <button class="hist-back-btn" onclick="showInputs()">← Back</button>
-          </div>
-          <div class="hist-empty">No sessions logged yet.<br>Log your first session today! 💪</div>`;
-        return;
-      }
+    let html = `
+      <div class="hist-top">
+        <span class="hist-top-title">History — ${dayName}</span>
+        <button class="hist-back-btn" onclick="showInputs()">← Back</button>
+      </div>${loadingNote}`;
 
-      // Group by date → exercise
-      const byDate = {};
-      json.data.forEach(e => {
-        if (!byDate[e.date]) byDate[e.date] = {};
-        if (!byDate[e.date][e.exercise]) byDate[e.date][e.exercise] = [];
-        byDate[e.date][e.exercise].push(e);
+    Object.keys(byDate).sort().reverse().forEach(date => {
+      html += `<div class="hist-date-group"><div class="hist-date">📅 ${date}</div>`;
+      Object.keys(byDate[date]).forEach(ex => {
+        const sets = byDate[date][ex];
+        const setsText = sets.map(s => `${s.weight}kg × ${s.reps}`).join(' &nbsp;|&nbsp; ');
+        html += `
+          <div class="hist-ex-row">
+            <div class="hist-ex-name">${ex}</div>
+            <div class="hist-sets-row">${setsText}</div>
+          </div>`;
       });
+      html += `</div>`;
+    });
 
-      let html = `
-        <div class="hist-top">
-          <span class="hist-top-title">History — ${day.name}</span>
-          <button class="hist-back-btn" onclick="showInputs()">← Back</button>
-        </div>`;
-
-      Object.keys(byDate).sort().reverse().forEach(date => {
-        html += `<div class="hist-date-group"><div class="hist-date">📅 ${date}</div>`;
-        Object.keys(byDate[date]).forEach(ex => {
-          const sets = byDate[date][ex];
-          const setsText = sets.map(s => `${s.weight}kg×${s.reps}`).join(' &nbsp;|&nbsp; ');
-          html += `
-            <div class="hist-ex-row">
-              <div class="hist-ex-name">${ex}</div>
-              <div class="hist-sets-row">${setsText}</div>
-            </div>`;
-        });
-        html += `</div>`;
-      });
-
-      hist.innerHTML = html;
-    } catch (err) {
-      hist.innerHTML = `
-        <div class="hist-top">
-          <span class="hist-top-title">History</span>
-          <button class="hist-back-btn" onclick="showInputs()">← Back</button>
-        </div>
-        <div class="hist-empty" style="color:var(--accent4)">Error loading: ${err.message}</div>`;
-    }
+    hist.innerHTML = html;
   }
 
   function showInputs() {
