@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Fitness Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2128;
+    --border: #2a2d35;
+    --accent: #f0c040;
+    --accent2: #4ade80;
+    --accent3: #60a5fa;
+    --accent4: #f87171;
+    --text: #e8eaf0;
+    --muted: #7a7f8e;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 28px 24px 20px; }
+  .header h1 { font-family: var(--font-display); font-size: 42px; letter-spacing: 2px; color: var(--accent); line-height: 1; margin-bottom: 12px; }
+  .header-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .badge { font-family: var(--font-mono); font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 500; letter-spacing: 0.5px; }
+  .badge-yellow { background: rgba(240,192,64,0.15); color: var(--accent); border: 1px solid rgba(240,192,64,0.3); }
+  .badge-green  { background: rgba(74,222,128,0.12); color: var(--accent2); border: 1px solid rgba(74,222,128,0.25); }
+  .badge-blue   { background: rgba(96,165,250,0.12); color: var(--accent3); border: 1px solid rgba(96,165,250,0.25); }
+  .badge-red    { background: rgba(248,113,113,0.12); color: var(--accent4); border: 1px solid rgba(248,113,113,0.25); }
+  .tabs { display: flex; gap: 4px; margin-top: 16px; }
+  .tab { padding: 8px 20px; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 500; font-size: 13px; border: 1px solid transparent; border-bottom: none; transition: all 0.2s; color: var(--muted); }
+  .tab.active { background: var(--bg); color: var(--accent); border-color: var(--border); border-bottom-color: var(--bg); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .content { padding: 24px; max-width: 960px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .icon-yellow { background: rgba(240,192,64,0.12); }
+  .icon-green  { background: rgba(74,222,128,0.10); }
+  .icon-blue   { background: rgba(96,165,250,0.10); }
+  .icon-red    { background: rgba(248,113,113,0.10); }
+  .icon-purple { background: rgba(167,139,250,0.10); }
+  .icon-orange { background: rgba(251,146,60,0.10); }
+  .card-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 1px; color: var(--text); }
+  .card-subtitle { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 1px; }
+  .meal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .meal-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: var(--surface2); border-radius: 6px; gap: 8px; }
+  .meal-name { color: var(--text); font-size: 13px; }
+  .meal-amount { font-family: var(--font-mono); font-size: 12px; color: var(--accent); white-space: nowrap; font-weight: 500; }
+  .macro-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .macro { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .macro-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: var(--accent2); }
+  .dot-yellow { background: var(--accent); }
+  .macro-val { font-family: var(--font-mono); font-weight: 500; }
+  .macro-label { color: var(--muted); }
+  .option-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .opt-tab { padding: 5px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); color: var(--muted); font-weight: 500; transition: all 0.2s; }
+  .opt-tab.active { background: rgba(240,192,64,0.15); border-color: rgba(240,192,64,0.4); color: var(--accent); }
+  .opt-tab:hover:not(.active) { color: var(--text); }
+  .option-panel { display: none; }
+  .option-panel.active { display: block; }
+  .day-banner { background: linear-gradient(135deg,rgba(240,192,64,0.08),rgba(74,222,128,0.05)); border: 1px solid rgba(240,192,64,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
+  .rest-banner { background: linear-gradient(135deg,rgba(248,113,113,0.07),rgba(96,165,250,0.04)); border: 1px solid rgba(248,113,113,0.2); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
+  .day-stat { text-align: center; }
+  .day-stat-val { font-family: var(--font-display); font-size: 28px; color: var(--accent); letter-spacing: 1px; line-height: 1; }
+  .rest-banner .day-stat-val { color: var(--accent4); }
+  .day-stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .day-divider { width: 1px; background: var(--border); align-self: stretch; }
+  .note { background: rgba(96,165,250,0.07); border: 1px solid rgba(96,165,250,0.2); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: var(--accent3); margin-top: 12px; line-height: 1.6; }
+  .note strong { color: var(--text); }
+  .note-orange { background: rgba(251,146,60,0.07); border: 1px solid rgba(251,146,60,0.2); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #fb923c; margin-top: 12px; line-height: 1.6; }
+  .note-orange strong { color: var(--text); }
+  .timing-grid { display: flex; flex-direction: column; gap: 6px; }
+  .timing-row { display: flex; align-items: center; gap: 14px; padding: 8px 12px; background: var(--surface2); border-radius: 6px; }
+  .timing-time { font-family: var(--font-mono); font-size: 13px; color: var(--accent); width: 80px; flex-shrink: 0; font-weight: 500; }
+  .timing-meal { font-size: 13px; }
+  .reminder-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .reminder-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--surface2); border-radius: 8px; font-size: 12px; line-height: 1.5; }
+  .reminder-icon { font-size: 16px; flex-shrink: 0; }
+  .section-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; margin-top: 4px; }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .sub-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 14px 0 8px; }
+  .sunday-flex { display: flex; flex-direction: column; gap: 8px; }
+  .sunday-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--surface2); border-radius: 8px; }
+  .sunday-time { font-family: var(--font-mono); font-size: 12px; color: var(--accent4); width: 110px; flex-shrink: 0; padding-top: 2px; }
+  .sunday-desc { font-size: 13px; line-height: 1.6; }
+  .sunday-desc small { color: var(--muted); font-size: 11px; display: block; margin-top: 3px; }
+  .week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; margin-bottom: 24px; }
+  .day-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 10px; text-align: center; cursor: pointer; transition: all 0.2s; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .day-card:hover { border-color: rgba(240,192,64,0.3); }
+  .day-card.active { border-color: var(--accent); background: rgba(240,192,64,0.07); }
+  .day-card.rest-card { border-color: rgba(248,113,113,0.2); background: rgba(248,113,113,0.04); }
+  .day-name { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 1px; }
+  .day-focus { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .day-card.active .day-focus { color: var(--accent); }
+  .day-card.rest-card .day-focus { color: var(--accent4); }
+  .day-num { font-family: var(--font-display); font-size: 20px; color: var(--muted); line-height: 1; }
+  .day-card.active .day-num { color: var(--accent); }
+  .workout-detail { display: none; }
+  .workout-detail.active { display: block; }
+  .exercise-list { display: flex; flex-direction: column; gap: 6px; }
+  .exercise-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface2); border-radius: 8px; border-left: 3px solid var(--border); transition: all 0.2s; }
+  .exercise-item:hover { border-left-color: var(--accent); }
+  .ex-num { font-family: var(--font-mono); font-size: 11px; color: var(--muted); width: 20px; flex-shrink: 0; }
+  .ex-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .ex-muscle { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-family: var(--font-mono); }
+  @media (max-width:640px) {
+    .meal-grid { grid-template-columns: 1fr; }
+    .week-grid { grid-template-columns: repeat(4,1fr); }
+    .reminder-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 30px; }
+    .content { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>MY FITNESS PLAN</h1>
+  <div class="header-meta">
+    <span class="badge badge-yellow">⚖️ 100kg → 85kg</span>
+    <span class="badge badge-green">💪 ~135g protein (gym) · ~60g (Thu) · ~22g (Sun)</span>
+    <span class="badge badge-blue">🔥 ~1960 kcal gym · ~1430 Thu · ~900 Sun</span>
+    <span class="badge badge-red">🏋️ Mon Tue Wed Fri Sat</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('diet',this)">🥗 Diet Plan</div>
+    <div class="tab" onclick="switchTab('workout',this)">🏋️ Workout Split</div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ===== DIET ===== -->
+<div class="section active" id="diet">
+
+  <p class="section-label">🏋️ Gym Days — Mon · Tue · Wed · Fri · Sat</p>
+
+  <!-- BREAKFAST -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-yellow">🌅</div>
+      <div>
+        <div class="card-title">BREAKFAST</div>
+        <div class="card-subtitle">Fixed · Overnight oats · 7:00 AM · Soak everything night before</div>
+      </div>
+    </div>
+    <div class="meal-grid">
+      <div class="meal-item"><span class="meal-name">Protein Oats</span><span class="meal-amount">100g</span></div>
+      <div class="meal-item"><span class="meal-name">Milk</span><span class="meal-amount">250ml</span></div>
+      <div class="meal-item"><span class="meal-name">Pumpkin Seeds</span><span class="meal-amount">1 tbsp (~10g)</span></div>
+      <div class="meal-item"><span class="meal-name">Chia Seeds</span><span class="meal-amount">1 tbsp (~12g)</span></div>
+      <div class="meal-item"><span class="meal-name">Flaxseed (ground)</span><span class="meal-amount">1 tbsp (~10g)</span></div>
+      <div class="meal-item"><span class="meal-name">Almonds (soaked)</span><span class="meal-amount">6 pieces</span></div>
+      <div class="meal-item"><span class="meal-name">Honey</span><span class="meal-amount">½ tsp</span></div>
+      <div class="meal-item"><span class="meal-name">Cinnamon</span><span class="meal-amount">pinch</span></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~43g</span>&nbsp;<span class="macro-label">protein</span></div>
+      <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~722</span>&nbsp;<span class="macro-label">kcal</span></div>
+    </div>
+  </div>
+
+  <!-- POST WORKOUT -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-blue">💊</div>
+      <div>
+        <div class="card-title">POST WORKOUT SHAKE</div>
+        <div class="card-subtitle">Fixed · Gym days only · Within 30–40 min after gym</div>
+      </div>
+    </div>
+    <div class="meal-grid">
+      <div class="meal-item"><span class="meal-name">Protein Powder</span><span class="meal-amount">1 scoop</span></div>
+      <div class="meal-item"><span class="meal-name">Water</span><span class="meal-amount">mix well</span></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~25g</span>&nbsp;<span class="macro-label">protein</span></div>
+      <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~120</span>&nbsp;<span class="macro-label">kcal</span></div>
+    </div>
+  </div>
+
+  <!-- LUNCH -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-green">🍽️</div>
+      <div>
+        <div class="card-title">LUNCH</div>
+        <div class="card-subtitle">Rotate 4 options · 1:30 PM · Curd in every option</div>
+      </div>
+    </div>
+    <div class="option-tabs">
+      <div class="opt-tab active" onclick="switchOption('lunch','A',this)">A · Mon &amp; Sat</div>
+      <div class="opt-tab" onclick="switchOption('lunch','B',this)">B · Tue</div>
+      <div class="opt-tab" onclick="switchOption('lunch','C',this)">C · Wed</div>
+      <div class="opt-tab" onclick="switchOption('lunch','D',this)">D · Fri</div>
+    </div>
+
+    <div class="option-panel active" id="lunch-A">
+      <div class="meal-grid">
+        <div class="meal-item"><span class="meal-name">Chapati (whole wheat)</span><span class="meal-amount">1 piece</span></div>
+        <div class="meal-item"><span class="meal-name">Paneer sabzi</span><span class="meal-amount">100g</span></div>
+        <div class="meal-item"><span class="meal-name">Soaked chana</span><span class="meal-amount">75g</span></div>
+        <div class="meal-item"><span class="meal-name">Curd</span><span class="meal-amount">100g</span></div>
+        <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">10 pieces</span></div>
+      </div>
+      <div class="note">✅ <strong>Chana = soak 8 hrs, eat directly.</strong> No cooking needed.</div>
+      <div class="macro-row">
+        <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~35g</span>&nbsp;<span class="macro-label">protein</span></div>
+        <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~590</span>&nbsp;<span class="macro-label">kcal</span></div>
+      </div>
+    </div>
+
+    <div class="option-panel" id="lunch-B">
+      <div class="meal-grid">
+        <div class="meal-item"><span class="meal-name">Chapati (whole wheat)</span><span class="meal-amount">1 piece</span></div>
+        <div class="meal-item"><span class="meal-name">Paneer bhurji</span><span class="meal-amount">100g</span></div>
+        <div class="meal-item"><span class="meal-name">Rajma (cooked)</span><span class="meal-amount">75g</span></div>
+        <div class="meal-item"><span class="meal-name">Curd</span><span class="meal-amount">100g</span></div>
+        <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">10 pieces</span></div>
+      </div>
+      <div class="note-orange">⚠️ <strong>Rajma = soak overnight + pressure cook (3–4 whistles).</strong> Never eat raw — always cook fully.</div>
+      <div class="macro-row">
+        <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~33.5g</span>&nbsp;<span class="macro-label">protein</span></div>
+        <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~607</span>&nbsp;<span class="macro-label">kcal</span></div>
+      </div>
+    </div>
+
+    <div class="option-panel" id="lunch-C">
+      <div class="meal-grid">
+        <div class="meal-item"><span class="meal-name">Besan chilla</span><span class="meal-amount">2 pieces</span></div>
+        <div class="meal-item"><span class="meal-name">Paneer (side)</span><span class="meal-amount">50g</span></div>
+        <div class="meal-item"><span class="meal-name">Soaked chana</span><span class="meal-amount">75g</span></div>
+        <div class="meal-item"><span class="meal-name">Curd</span><span class="meal-amount">100g</span></div>
+        <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">10 pieces</span></div>
+      </div>
+      <div class="note">💡 Besan chilla = gram flour pancake. Eat paneer on the side — simple, no extra cooking needed.</div>
+      <div class="macro-row">
+        <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~37g</span>&nbsp;<span class="macro-label">protein</span></div>
+        <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~594</span>&nbsp;<span class="macro-label">kcal</span></div>
+      </div>
+    </div>
+
+    <div class="option-panel" id="lunch-D">
+      <div class="meal-grid">
+        <div class="meal-item"><span class="meal-name">Chapati (whole wheat)</span><span class="meal-amount">1 piece</span></div>
+        <div class="meal-item"><span class="meal-name">Chole (cooked)</span><span class="meal-amount">75g</span></div>
+        <div class="meal-item"><span class="meal-name">Paneer (side)</span><span class="meal-amount">75g</span></div>
+        <div class="meal-item"><span class="meal-name">Curd</span><span class="meal-amount">100g</span></div>
+        <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">10 pieces</span></div>
+      </div>
+      <div class="note-orange">⚠️ <strong>Chole = soak overnight + pressure cook.</strong> Paneer added on side to hit protein target — chole alone is too low.</div>
+      <div class="macro-row">
+        <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~28.5g</span>&nbsp;<span class="macro-label">protein</span></div>
+        <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~549</span>&nbsp;<span class="macro-label">kcal</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DINNER -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-purple">🌙</div>
+      <div>
+        <div class="card-title">DINNER</div>
+        <div class="card-subtitle">Rotate 4 dals · 8:30 PM · 65–70g raw dal = 150g cooked</div>
+      </div>
+    </div>
+    <div class="option-tabs">
+      <div class="opt-tab active" onclick="switchOption('dinner','A',this)">Moong · Mon &amp; Fri</div>
+      <div class="opt-tab" onclick="switchOption('dinner','B',this)">Masoor · Tue</div>
+      <div class="opt-tab" onclick="switchOption('dinner','C',this)">Toor · Wed</div>
+      <div class="opt-tab" onclick="switchOption('dinner','D',this)">Chana Dal · Sat</div>
+    </div>
+    <div class="option-panel active" id="dinner-A">
+      <div class="meal-grid">
+        <div class="meal-item"><span class="meal-name">Moong dal (cooked)</span><span class="meal-amount">150g</span></div>
+        <div class="meal-item"><span class="meal-name">Chapati</span><span class="meal-amount">1–2 pieces</span></div>
+        <div class="meal-item"><span class="meal-name">Salad (cucumber+tomato)</span><span class="meal-amount">as needed</span></div>
+        <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">20 pieces</span></div>
+      </div>
+      <div class="note">✅ <strong>Lightest dal</strong> — zero bloating, best for night digestion.</div>
+      <div class="macro-row"><div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~25g</span>&nbsp;<span class="macro-label">protein</span></div><div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~420</span>&nbsp;<span class="macro-label">kcal</span></div></div>
+    </div>
+    <div class="option-panel" id="dinner-B">
+      <div class="meal-grid">
+        <div class="meal-item"><span class="meal-name">Masoor dal (cooked)</span><span class="meal-amount">150g</span></div>
+        <div class="meal-item"><span class="meal-name">Chapati</span><span class="meal-amount">1–2 pieces</span></div>
+        <div class="meal-item"><span class="meal-name">Salad (cucumber+tomato)</span><span class="meal-amount">as needed</span></div>
+        <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">20 pieces</span></div>
+      </div>
+      <div class="note">🥇 <strong>Highest protein dal</strong> — red lentil, great with tadka.</div>
+      <div class="macro-row"><div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~27g</span>&nbsp;<span class="macro-label">protein</span></div><div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~430</span>&nbsp;<span class="macro-label">kcal</span></div></div>
+    </div>
+    <div class="option-panel" id="dinner-C">
+      <div class="meal-grid">
+        <div class="meal-item"><span class="meal-name">Toor/Arhar dal (cooked)</span><span class="meal-amount">150g</span></div>
+        <div class="meal-item"><span class="meal-name">Chapati</span><span class="meal-amount">1–2 pieces</span></div>
+        <div class="meal-item"><span class="meal-name">Salad (cucumber+tomato)</span><span class="meal-amount">as needed</span></div>
+        <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">20 pieces</span></div>
+      </div>
+      <div class="note">🍲 <strong>Classic everyday dal</strong> — rich flavour, most common.</div>
+      <div class="macro-row"><div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~24g</span>&nbsp;<span class="macro-label">protein</span></div><div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~420</span>&nbsp;<span class="macro-label">kcal</span></div></div>
+    </div>
+    <div class="option-panel" id="dinner-D">
+      <div class="meal-grid">
+        <div class="meal-item"><span class="meal-name">Chana dal (cooked)</span><span class="meal-amount">150g</span></div>
+        <div class="meal-item"><span class="meal-name">Chapati</span><span class="meal-amount">1–2 pieces</span></div>
+        <div class="meal-item"><span class="meal-name">Salad (cucumber+tomato)</span><span class="meal-amount">as needed</span></div>
+        <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">20 pieces</span></div>
+      </div>
+      <div class="note">💪 <strong>Most filling dal</strong> — thick, keeps you full longer.</div>
+      <div class="macro-row"><div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~26g</span>&nbsp;<span class="macro-label">protein</span></div><div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~440</span>&nbsp;<span class="macro-label">kcal</span></div></div>
+    </div>
+  </div>
+
+  <!-- AFTER DINNER -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-blue">🥛</div>
+      <div><div class="card-title">AFTER DINNER</div><div class="card-subtitle">Fixed every day including rest days · 9:30 PM</div></div>
+    </div>
+    <div class="meal-grid">
+      <div class="meal-item"><span class="meal-name">Boiled milk</span><span class="meal-amount">250ml</span></div>
+    </div>
+    <div class="macro-row">
+      <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~8g</span>&nbsp;<span class="macro-label">protein</span></div>
+      <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~125</span>&nbsp;<span class="macro-label">kcal</span></div>
+    </div>
+  </div>
+
+  <div class="day-banner">
+    <div class="day-stat"><div class="day-stat-val">~135g</div><div class="day-stat-label">Protein (gym day)</div></div>
+    <div class="day-divider"></div>
+    <div class="day-stat"><div class="day-stat-val">~1960</div><div class="day-stat-label">kcal (gym day)</div></div>
+    <div class="day-divider"></div>
+    <div class="day-stat"><div class="day-stat-val">5 days</div><div class="day-stat-label">Training/week</div></div>
+  </div>
+
+  <!-- GOAL TRACKER -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-green">🎯</div>
+      <div><div class="card-title">GOAL TRACKER</div><div class="card-subtitle">100kg → 85kg · 10,000 steps daily · Full plan adherence</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div class="meal-item"><span class="meal-name">Current weight</span><span class="meal-amount" style="color:var(--accent4)">100 kg</span></div>
+      <div class="meal-item"><span class="meal-name">Target weight</span><span class="meal-amount" style="color:var(--accent2)">85 kg</span></div>
+      <div class="meal-item"><span class="meal-name">To lose</span><span class="meal-amount">15 kg</span></div>
+      <div class="meal-item"><span class="meal-name">Daily steps</span><span class="meal-amount">10,000</span></div>
+      <div class="meal-item"><span class="meal-name">Steps burn/day</span><span class="meal-amount">~500 kcal</span></div>
+      <div class="meal-item"><span class="meal-name">Weekly deficit</span><span class="meal-amount">~12,000 kcal</span></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="flex:1;min-width:140px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:14px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:32px;color:var(--accent4);letter-spacing:1px">10–11 wks</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Perfect adherence</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:rgba(240,192,64,0.08);border:1px solid rgba(240,192,64,0.2);border-radius:8px;padding:14px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:32px;color:var(--accent);letter-spacing:1px">4–5 months</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Realistic target ✅</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:14px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:32px;color:var(--accent2);letter-spacing:1px">5–6 months</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">With plateaus</div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:12px">💡 <strong>Stick to this plan completely</strong> and you'll hit 85kg in <strong>4–5 months.</strong> Weight loss may slow after the first month as metabolism adapts — that's normal. Keep going. 🔥</div>
+  </div>
+
+  <!-- WEEKLY ROTATION -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-yellow">📅</div>
+      <div><div class="card-title">WEEKLY ROTATION</div><div class="card-subtitle">Full week at a glance</div></div>
+    </div>
+    <div class="timing-grid">
+      <div class="timing-row"><span class="timing-time">Monday</span><span class="timing-meal">🏋️ Lunch A (Paneer + Chana) · Dinner A (Moong dal)</span></div>
+      <div class="timing-row"><span class="timing-time">Tuesday</span><span class="timing-meal">🏋️ Lunch B (Paneer + Rajma) · Dinner B (Masoor dal)</span></div>
+      <div class="timing-row"><span class="timing-time">Wednesday</span><span class="timing-meal">🏋️ Lunch C (Besan Chilla + Chana) · Dinner C (Toor dal)</span></div>
+      <div class="timing-row" style="border-left:3px solid var(--accent4)"><span class="timing-time" style="color:var(--accent4)">Thursday</span><span class="timing-meal">🛋️ REST — Dalia breakfast · Poha + Paneer lunch · Moong dal dinner</span></div>
+      <div class="timing-row"><span class="timing-time">Friday</span><span class="timing-meal">🏋️ Lunch D (Chole + Curd) · Dinner D (Chana dal)</span></div>
+      <div class="timing-row"><span class="timing-time">Saturday</span><span class="timing-meal">🏋️ Lunch A (Paneer + Chana) · Dinner A (Moong dal)</span></div>
+      <div class="timing-row" style="border-left:3px solid var(--accent4)"><span class="timing-time" style="color:var(--accent4)">Sunday</span><span class="timing-meal">🍎 LIGHT DAY — Fruits throughout + one meal (Poha or Sabzi+Roti) + milk</span></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <p class="section-label">🛋️ Rest Days — Thursday &amp; Sunday</p>
+
+  <!-- THURSDAY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-red">📅</div>
+      <div><div class="card-title">THURSDAY — REST DAY</div><div class="card-subtitle">~64g protein · ~1430 kcal · No protein shake</div></div>
+    </div>
+    <p class="sub-label">Breakfast · 7:00 AM</p>
+    <div class="meal-grid" style="margin-bottom:12px">
+      <div class="meal-item"><span class="meal-name">Dalia (broken wheat)</span><span class="meal-amount">80g</span></div>
+      <div class="meal-item"><span class="meal-name">Milk</span><span class="meal-amount">200ml</span></div>
+      <div class="meal-item"><span class="meal-name">Almonds (soaked)</span><span class="meal-amount">6 pieces</span></div>
+      <div class="meal-item"><span class="meal-name">Honey</span><span class="meal-amount">½ tsp</span></div>
+    </div>
+    <p class="sub-label">Lunch · 1:30 PM</p>
+    <div class="meal-grid" style="margin-bottom:12px">
+      <div class="meal-item"><span class="meal-name">Poha (cooked)</span><span class="meal-amount">150g</span></div>
+      <div class="meal-item"><span class="meal-name">Paneer</span><span class="meal-amount">50g</span></div>
+      <div class="meal-item"><span class="meal-name">Curd</span><span class="meal-amount">100g</span></div>
+      <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">10 pieces</span></div>
+    </div>
+    <p class="sub-label">Dinner · 8:30 PM</p>
+    <div class="meal-grid" style="margin-bottom:12px">
+      <div class="meal-item"><span class="meal-name">Moong dal (cooked)</span><span class="meal-amount">150g</span></div>
+      <div class="meal-item"><span class="meal-name">Chapati</span><span class="meal-amount">1 piece</span></div>
+      <div class="meal-item"><span class="meal-name">Light sabzi</span><span class="meal-amount">100g</span></div>
+      <div class="meal-item"><span class="meal-name">Roasted peanuts</span><span class="meal-amount">15 pieces</span></div>
+    </div>
+    <p class="sub-label">After Dinner · 9:30 PM</p>
+    <div class="meal-grid">
+      <div class="meal-item"><span class="meal-name">Boiled milk</span><span class="meal-amount">250ml</span></div>
+    </div>
+    <div class="macro-row" style="margin-top:14px">
+      <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~64g</span>&nbsp;<span class="macro-label">protein</span></div>
+      <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~1430</span>&nbsp;<span class="macro-label">kcal</span></div>
+    </div>
+  </div>
+
+  <!-- SUNDAY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-orange">🍎</div>
+      <div><div class="card-title">SUNDAY — LIGHT DAY</div><div class="card-subtitle">~22g protein · ~900 kcal · Fruits + one meal · Flexible</div></div>
+    </div>
+    <div class="sunday-flex">
+      <div class="sunday-row">
+        <span class="sunday-time">Morning</span>
+        <div class="sunday-desc">🍌 Fruits — whatever is available at home<small>Banana, apple, papaya, watermelon, pomegranate — any</small></div>
+      </div>
+      <div class="sunday-row">
+        <span class="sunday-time">Afternoon</span>
+        <div class="sunday-desc">🍽️ One proper meal — Poha <strong>OR</strong> Sabzi + 1–2 roti<small>Pick whichever is available or easy to make that day</small></div>
+      </div>
+      <div class="sunday-row">
+        <span class="sunday-time">Throughout day</span>
+        <div class="sunday-desc">🍉 Fruits whenever hungry — no rules, no fixed schedule<small>Keep it light, avoid heavy snacking</small></div>
+      </div>
+      <div class="sunday-row">
+        <span class="sunday-time">9:30 PM</span>
+        <div class="sunday-desc">🥛 Boiled milk — 250ml always<small>Even on light days — protects muscle overnight</small></div>
+      </div>
+    </div>
+    <div class="macro-row" style="margin-top:14px">
+      <div class="macro"><div class="macro-dot dot-green"></div><span class="macro-val">~20–25g</span>&nbsp;<span class="macro-label">protein</span></div>
+      <div class="macro"><div class="macro-dot dot-yellow"></div><span class="macro-val">~800–1000</span>&nbsp;<span class="macro-label">kcal</span></div>
+    </div>
+    <div class="note" style="margin-top:12px">🔥 <strong>Why Sunday is light:</strong> Low calorie one day a week boosts fat loss, improves digestion, gives gut a break. Back to full eating Monday. ✅</div>
+  </div>
+
+  <div class="rest-banner">
+    <div class="day-stat"><div class="day-stat-val">~64g</div><div class="day-stat-label">Thu protein</div></div>
+    <div class="day-divider"></div>
+    <div class="day-stat"><div class="day-stat-val">~22g</div><div class="day-stat-label">Sun protein</div></div>
+    <div class="day-divider"></div>
+    <div class="day-stat"><div class="day-stat-val">~600+</div><div class="day-stat-label">kcal saved vs gym day</div></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- TIMING -->
+  <p class="section-label">⏰ Daily Timing (Gym Days)</p>
+  <div class="card">
+    <div class="timing-grid">
+      <div class="timing-row"><span class="timing-time">7:00 AM</span><span class="timing-meal">🌅 Breakfast — overnight oats (soaked previous night)</span></div>
+      <div class="timing-row"><span class="timing-time">11:30 AM</span><span class="timing-meal">💊 Post workout shake — water only</span></div>
+      <div class="timing-row"><span class="timing-time">1:30 PM</span><span class="timing-meal">🍽️ Lunch — follow weekly rotation</span></div>
+      <div class="timing-row"><span class="timing-time">8:30 PM</span><span class="timing-meal">🌙 Dinner — dal + chapati + salad + peanuts</span></div>
+      <div class="timing-row"><span class="timing-time">9:30 PM</span><span class="timing-meal">🥛 Boiled milk 250ml — every day</span></div>
+    </div>
+  </div>
+
+  <!-- SABZI -->
+  <p class="section-label">🥬 Light Sabzi Options (dinner / rest days)</p>
+  <div class="card">
+    <div class="meal-grid">
+      <div class="meal-item"><span class="meal-name">🥬 Palak (Spinach)</span><span class="meal-amount">protein + iron</span></div>
+      <div class="meal-item"><span class="meal-name">🫑 Bhindi (Okra)</span><span class="meal-amount">very low cal</span></div>
+      <div class="meal-item"><span class="meal-name">🥦 Gobhi (Cauliflower)</span><span class="meal-amount">low cal</span></div>
+      <div class="meal-item"><span class="meal-name">🫙 Lauki (Bottle gourd)</span><span class="meal-amount">best for fat loss</span></div>
+      <div class="meal-item"><span class="meal-name">🍆 Baingan (Brinjal)</span><span class="meal-amount">extremely low cal</span></div>
+      <div class="meal-item"><span class="meal-name">🥕 Mix veg</span><span class="meal-amount">fibre rich</span></div>
+    </div>
+  </div>
+
+  <!-- REMINDERS -->
+  <p class="section-label">📌 Key Reminders</p>
+  <div class="card">
+    <div class="reminder-grid">
+      <div class="reminder-item"><span class="reminder-icon">🌙</span><span>Soak oats + almonds every night before sleeping</span></div>
+      <div class="reminder-item"><span class="reminder-icon">💧</span><span>Soak chana 8 hrs minimum — eat directly, no cooking</span></div>
+      <div class="reminder-item"><span class="reminder-icon">🫘</span><span>Rajma &amp; Chole = soak overnight + pressure cook 3–4 whistles</span></div>
+      <div class="reminder-item"><span class="reminder-icon">⚖️</span><span>Raw dal 65–70g = 150g cooked (doubles in weight)</span></div>
+      <div class="reminder-item"><span class="reminder-icon">🥜</span><span>Grind flaxseeds before adding — whole seeds pass undigested</span></div>
+      <div class="reminder-item"><span class="reminder-icon">🚫</span><span>No protein shake on rest days (Thu &amp; Sun)</span></div>
+      <div class="reminder-item"><span class="reminder-icon">💧</span><span>Drink 2.5–3 litres of water every day</span></div>
+      <div class="reminder-item"><span class="reminder-icon">🥛</span><span>250ml boiled milk every night — even on rest days</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== WORKOUT ===== -->
+<div class="section" id="workout">
+
+  <div class="note" style="margin-bottom:20px">
+    <strong>Restructured Split:</strong> Legs shifted to Saturday · Rest days Thursday &amp; Sunday · Tricep overlap Tue+Wed noted — skip cable overhead extension on Wed if fatigued.
+  </div>
+
+  <p class="section-label">📅 Weekly Schedule — Click any day</p>
+
+  <div class="week-grid">
+    <div class="day-card active" onclick="selectDay(0,this)"><div class="day-name">MON</div><div class="day-num">1</div><div class="day-focus">Back + Biceps</div></div>
+    <div class="day-card" onclick="selectDay(1,this)"><div class="day-name">TUE</div><div class="day-num">2</div><div class="day-focus">Chest + Triceps + Shoulders</div></div>
+    <div class="day-card" onclick="selectDay(2,this)"><div class="day-name">WED</div><div class="day-num">3</div><div class="day-focus">Shoulders + Arms</div></div>
+    <div class="day-card rest-card" onclick="selectDay(3,this)"><div class="day-name">THU</div><div class="day-num">—</div><div class="day-focus">REST 🛋️</div></div>
+    <div class="day-card" onclick="selectDay(4,this)"><div class="day-name">FRI</div><div class="day-num">4</div><div class="day-focus">Chest + Back</div></div>
+    <div class="day-card" onclick="selectDay(5,this)"><div class="day-name">SAT</div><div class="day-num">5</div><div class="day-focus">LEGS 🦵</div></div>
+    <div class="day-card rest-card" onclick="selectDay(6,this)"><div class="day-name">SUN</div><div class="day-num">—</div><div class="day-focus">REST 🍎</div></div>
+  </div>
+
+  <div class="workout-detail active" id="day-0">
+    <div class="card">
+      <div class="card-header"><div class="card-icon icon-blue">💪</div><div><div class="card-title">DAY 1 — BACK + BICEPS</div><div class="card-subtitle">Monday · Pull day</div></div></div>
+      <div class="exercise-list">
+        <div class="exercise-item"><span class="ex-num">01</span><span class="ex-name">Lat Pulldown</span><span class="ex-muscle badge badge-blue">Lats</span></div>
+        <div class="exercise-item"><span class="ex-num">02</span><span class="ex-name">Mid Back Seated Row</span><span class="ex-muscle badge badge-blue">Mid Back</span></div>
+        <div class="exercise-item"><span class="ex-num">03</span><span class="ex-name">Traps</span><span class="ex-muscle badge badge-blue">Traps</span></div>
+        <div class="exercise-item"><span class="ex-num">04</span><span class="ex-name">Reverse Fly</span><span class="ex-muscle badge badge-blue">Rear Delt</span></div>
+        <div class="exercise-item"><span class="ex-num">05</span><span class="ex-name">Bicep Curls</span><span class="ex-muscle badge badge-green">Biceps</span></div>
+        <div class="exercise-item"><span class="ex-num">06</span><span class="ex-name">Hammer Curls</span><span class="ex-muscle badge badge-green">Biceps</span></div>
+      </div>
+      <button class="log-session-btn" onclick="openLogModal(0)">📝 Log Today's Session</button>
+    </div>
+  </div>
+
+  <div class="workout-detail" id="day-1">
+    <div class="card">
+      <div class="card-header"><div class="card-icon icon-red">🏋️</div><div><div class="card-title">DAY 2 — CHEST + TRICEPS + SHOULDERS</div><div class="card-subtitle">Tuesday · Push day</div></div></div>
+      <div class="exercise-list">
+        <div class="exercise-item"><span class="ex-num">01</span><span class="ex-name">Bench Press</span><span class="ex-muscle badge badge-red">Chest</span></div>
+        <div class="exercise-item"><span class="ex-num">02</span><span class="ex-name">Cable Fly</span><span class="ex-muscle badge badge-red">Chest</span></div>
+        <div class="exercise-item"><span class="ex-num">03</span><span class="ex-name">Shoulder Press</span><span class="ex-muscle badge badge-yellow">Shoulders</span></div>
+        <div class="exercise-item"><span class="ex-num">04</span><span class="ex-name">Delt Lateral Raise</span><span class="ex-muscle badge badge-yellow">Side Delt</span></div>
+        <div class="exercise-item"><span class="ex-num">05</span><span class="ex-name">Tricep Pushdown</span><span class="ex-muscle badge badge-green">Triceps</span></div>
+        <div class="exercise-item"><span class="ex-num">06</span><span class="ex-name">Cable Overhead Extension</span><span class="ex-muscle badge badge-green">Triceps</span></div>
+      </div>
+      <button class="log-session-btn" onclick="openLogModal(1)">📝 Log Today's Session</button>
+    </div>
+  </div>
+
+  <div class="workout-detail" id="day-2">
+    <div class="card">
+      <div class="card-header"><div class="card-icon icon-yellow">🎯</div><div><div class="card-title">DAY 3 — SHOULDERS + ARMS</div><div class="card-subtitle">Wednesday</div></div></div>
+      <div class="exercise-list">
+        <div class="exercise-item"><span class="ex-num">01</span><span class="ex-name">Dumbbell Shoulder Press</span><span class="ex-muscle badge badge-yellow">Shoulders</span></div>
+        <div class="exercise-item"><span class="ex-num">02</span><span class="ex-name">Cable Lateral Raises</span><span class="ex-muscle badge badge-yellow">Side Delt</span></div>
+        <div class="exercise-item"><span class="ex-num">03</span><span class="ex-name">Tricep Extension</span><span class="ex-muscle badge badge-green">Triceps</span></div>
+        <div class="exercise-item"><span class="ex-num">04</span><span class="ex-name">Cable Overhead Extension</span><span class="ex-muscle badge badge-green">Triceps</span></div>
+        <div class="exercise-item"><span class="ex-num">05</span><span class="ex-name">Preacher Curl</span><span class="ex-muscle badge badge-blue">Biceps</span></div>
+        <div class="exercise-item"><span class="ex-num">06</span><span class="ex-name">Incline Bicep Curl</span><span class="ex-muscle badge badge-blue">Biceps</span></div>
+      </div>
+      <div class="note">⚠️ <strong>Tricep overlap:</strong> Hit Tue &amp; Wed back to back. Skip cable overhead extension on Wed if fatigued.</div>
+      <button class="log-session-btn" onclick="openLogModal(2)">📝 Log Today's Session</button>
+    </div>
+  </div>
+
+  <div class="workout-detail" id="day-3">
+    <div class="card">
+      <div class="card-header"><div class="card-icon icon-red">😴</div><div><div class="card-title">THURSDAY — REST DAY</div><div class="card-subtitle">Full recovery · No gym · Follow Thursday diet</div></div></div>
+      <div class="note"><strong>Why Thursday?</strong> After 3 consecutive days (Mon–Tue–Wed), rest here before the Friday–Saturday push. Optimal mid-week placement. ✅</div>
+    </div>
+  </div>
+
+  <div class="workout-detail" id="day-4">
+    <div class="card">
+      <div class="card-header"><div class="card-icon icon-red">💥</div><div><div class="card-title">DAY 4 — CHEST + BACK</div><div class="card-subtitle">Friday · Full upper compound</div></div></div>
+      <div class="exercise-list">
+        <div class="exercise-item"><span class="ex-num">01</span><span class="ex-name">Incline Bench Press</span><span class="ex-muscle badge badge-red">Upper Chest</span></div>
+        <div class="exercise-item"><span class="ex-num">02</span><span class="ex-name">Machine Fly</span><span class="ex-muscle badge badge-red">Chest</span></div>
+        <div class="exercise-item"><span class="ex-num">03</span><span class="ex-name">Seated Row</span><span class="ex-muscle badge badge-blue">Mid Back</span></div>
+        <div class="exercise-item"><span class="ex-num">04</span><span class="ex-name">T-Row</span><span class="ex-muscle badge badge-blue">Thickness</span></div>
+        <div class="exercise-item"><span class="ex-num">05</span><span class="ex-name">Reverse Fly</span><span class="ex-muscle badge badge-blue">Rear Delt</span></div>
+        <div class="exercise-item"><span class="ex-num">06</span><span class="ex-name">Traps</span><span class="ex-muscle badge badge-blue">Traps</span></div>
+      </div>
+      <div class="note">✅ Chest: Tue → Fri = <strong>3 days rest</strong> · Back: Mon → Fri = <strong>4 days rest</strong></div>
+      <button class="log-session-btn" onclick="openLogModal(4)">📝 Log Today's Session</button>
+    </div>
+  </div>
+
+  <div class="workout-detail" id="day-5">
+    <div class="card">
+      <div class="card-header"><div class="card-icon icon-green">🦵</div><div><div class="card-title">DAY 5 — LEGS</div><div class="card-subtitle">Saturday · Lower body</div></div></div>
+      <div class="exercise-list">
+        <div class="exercise-item"><span class="ex-num">01</span><span class="ex-name">Leg Curl</span><span class="ex-muscle badge badge-green">Hamstrings</span></div>
+        <div class="exercise-item"><span class="ex-num">02</span><span class="ex-name">Leg Extension</span><span class="ex-muscle badge badge-green">Quads</span></div>
+        <div class="exercise-item"><span class="ex-num">03</span><span class="ex-name">Leg Press / Squat</span><span class="ex-muscle badge badge-green">Full Legs</span></div>
+        <div class="exercise-item"><span class="ex-num">04</span><span class="ex-name">Calf Raises</span><span class="ex-muscle badge badge-green">Calves</span></div>
+      </div>
+      <div class="note">✅ <strong>Best placement:</strong> Saturday legs = full recovery Sun + Mon before upper body again. 🔥</div>
+      <button class="log-session-btn" onclick="openLogModal(5)">📝 Log Today's Session</button>
+    </div>
+  </div>
+
+  <div class="workout-detail" id="day-6">
+    <div class="card">
+      <div class="card-header"><div class="card-icon icon-orange">🍎</div><div><div class="card-title">SUNDAY — LIGHT DAY</div><div class="card-subtitle">Fruits + one meal + milk · No gym</div></div></div>
+      <div class="note">Legs from Saturday fully recover today. Monday you restart fresh. Eat light — fruits throughout + one proper meal + milk at night.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <p class="section-label">📊 Muscle Frequency Per Week</p>
+  <div class="card">
+    <div class="meal-grid">
+      <div class="meal-item"><span class="meal-name">🔴 Chest</span><span class="meal-amount">2x · Tue + Fri</span></div>
+      <div class="meal-item"><span class="meal-name">🔵 Back</span><span class="meal-amount">2x · Mon + Fri</span></div>
+      <div class="meal-item"><span class="meal-name">🟡 Shoulders</span><span class="meal-amount">2x · Tue + Wed</span></div>
+      <div class="meal-item"><span class="meal-name">🟢 Biceps</span><span class="meal-amount">2x · Mon + Wed</span></div>
+      <div class="meal-item"><span class="meal-name">🟢 Triceps</span><span class="meal-amount">2x · Tue + Wed</span></div>
+      <div class="meal-item"><span class="meal-name">🦵 Legs</span><span class="meal-amount">1x · Sat</span></div>
+    </div>
+    <div class="note" style="margin-top:12px">💡 <strong>Future tip:</strong> Add lunges or a second leg press variation on Saturday. Legs = largest muscle group → more volume = more fat burnt. 🔥</div>
+  </div>
+
+</div>
+</div>
+
+<!-- Hidden iframe for form submission — bypasses CORS from file:// -->
+<iframe name="hidden_save_frame" style="display:none" aria-hidden="true"></iframe>
+
+<!-- ===== LOG SESSION MODAL ===== -->
+<div id="logModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Log Session</div>
+        <div class="modal-date" id="modalDate"></div>
+      </div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- Input Section -->
+    <div id="inputSection">
+      <div id="exerciseInputs"></div>
+      <div class="modal-actions">
+        <button class="save-btn" id="saveBtn" onclick="saveSession()">💾 Save to Google Sheets</button>
+        <button class="hist-btn" onclick="loadHistory()">📊 History</button>
+      </div>
+    </div>
+
+    <!-- History Section -->
+    <div id="historySection" style="display:none"></div>
+  </div>
+</div>
+
+<style>
+  /* MODAL */
+  .modal { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.88); backdrop-filter:blur(4px); }
+  .modal.active { display:flex; align-items:flex-end; }
+  @media(min-width:640px){ .modal.active{ align-items:center; justify-content:center; } }
+  .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:16px 16px 0 0; width:100%; max-height:92vh; overflow-y:auto; padding:20px; }
+  @media(min-width:640px){ .modal-box{ border-radius:16px; max-width:580px; max-height:82vh; } }
+  .modal-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .modal-title { font-family:var(--font-display); font-size:22px; color:var(--accent); letter-spacing:1px; }
+  .modal-date { font-size:11px; color:var(--muted); font-family:var(--font-mono); margin-top:3px; }
+  .close-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:16px; flex-shrink:0; }
+
+  /* EXERCISE BLOCKS */
+  .ex-log-block { margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .ex-log-block:last-child { border-bottom:none; }
+  .ex-log-name { font-weight:600; font-size:14px; color:var(--accent); margin-bottom:10px; }
+  .set-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .set-label { font-family:var(--font-mono); font-size:11px; color:var(--muted); width:40px; flex-shrink:0; }
+  .w-input,.r-input { background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--font-mono); font-size:15px; padding:9px 10px; width:75px; text-align:center; -moz-appearance:textfield; }
+  .w-input::-webkit-outer-spin-button,.w-input::-webkit-inner-spin-button,.r-input::-webkit-outer-spin-button,.r-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+  .w-input:focus,.r-input:focus { outline:none; border-color:var(--accent); }
+  .set-x { color:var(--muted); font-size:16px; font-weight:300; }
+  .set-unit { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .add-set-btn { background:rgba(240,192,64,0.07); border:1px dashed rgba(240,192,64,0.3); color:var(--accent); border-radius:6px; padding:6px 14px; font-size:12px; cursor:pointer; margin-top:4px; font-family:var(--font-body); }
+  .add-set-btn:hover { background:rgba(240,192,64,0.13); }
+
+  /* MODAL ACTIONS */
+  .modal-actions { display:flex; gap:10px; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); position:sticky; bottom:0; background:var(--surface); padding-bottom:4px; }
+  .save-btn { flex:1; background:var(--accent); color:#000; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:14px; cursor:pointer; font-family:var(--font-body); }
+  .save-btn:disabled { opacity:0.6; cursor:not-allowed; }
+  .hist-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:13px 16px; font-size:13px; cursor:pointer; font-family:var(--font-body); white-space:nowrap; }
+
+  /* LOG SESSION BUTTON */
+  .log-session-btn { width:100%; background:rgba(240,192,64,0.09); border:1px solid rgba(240,192,64,0.3); color:var(--accent); border-radius:8px; padding:13px; font-size:14px; font-weight:600; cursor:pointer; margin-top:16px; font-family:var(--font-body); letter-spacing:0.5px; }
+  .log-session-btn:hover { background:rgba(240,192,64,0.16); }
+
+  /* HISTORY */
+  .hist-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+  .hist-top-title { font-family:var(--font-display); font-size:20px; letter-spacing:1px; color:var(--text); }
+  .hist-back-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:5px 14px; font-size:12px; cursor:pointer; font-family:var(--font-body); }
+  .hist-date-group { margin-bottom:16px; }
+  .hist-date { font-family:var(--font-mono); font-size:12px; color:var(--accent); padding:6px 0 8px; border-bottom:1px solid var(--border); margin-bottom:8px; letter-spacing:1px; }
+  .hist-ex-row { display:flex; flex-direction:column; gap:3px; padding:9px 12px; background:var(--surface2); border-radius:8px; margin-bottom:6px; border-left:3px solid var(--accent); }
+  .hist-ex-name { font-size:12px; font-weight:600; color:var(--text); }
+  .hist-sets-row { font-family:var(--font-mono); font-size:11px; color:var(--accent2); }
+  .hist-empty { text-align:center; padding:30px 20px; color:var(--muted); font-size:13px; }
+  .setup-warning { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.25); border-radius:10px; padding:16px; margin-bottom:16px; }
+  .setup-warning strong { color:var(--accent4); display:block; margin-bottom:6px; font-size:14px; }
+  .setup-warning p { color:var(--muted); font-size:12px; line-height:1.6; }
+</style>
+
+<script>
+  // ─── PASTE YOUR APPS SCRIPT URL HERE AFTER DEPLOYMENT ───
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzXob81v_7rFGemd8Q5mK2HgWX3S8-5XlsbQan8sltNeTSDJCdM9v8LGPczVGDweF-s/exec';
+  // ────────────────────────────────────────────────────────
+
+  const workoutDays = {
+    0: {
+      label: 'Monday',
+      name: 'Back + Biceps',
+      exercises: ['Lat Pulldown','Mid Back Seated Row','Traps','Reverse Fly','Bicep Curls','Hammer Curls']
+    },
+    1: {
+      label: 'Tuesday',
+      name: 'Chest + Triceps + Shoulders',
+      exercises: ['Bench Press','Cable Fly','Shoulder Press','Delt Lateral Raise','Tricep Pushdown','Cable Overhead Extension']
+    },
+    2: {
+      label: 'Wednesday',
+      name: 'Shoulders + Arms',
+      exercises: ['Dumbbell Shoulder Press','Cable Lateral Raises','Tricep Extension','Cable Overhead Extension','Preacher Curl','Incline Bicep Curl']
+    },
+    4: {
+      label: 'Friday',
+      name: 'Chest + Back',
+      exercises: ['Incline Bench Press','Machine Fly','Seated Row','T-Row','Reverse Fly','Traps']
+    },
+    5: {
+      label: 'Saturday',
+      name: 'Legs',
+      exercises: ['Leg Curl','Leg Extension','Leg Press / Squat','Calf Raises']
+    }
+  };
+
+  let currentDayIdx = null;
+
+  function openLogModal(idx) {
+    currentDayIdx = idx;
+    const day = workoutDays[idx];
+    if (!day) return;
+
+    document.getElementById('modalTitle').textContent = day.label + ' — ' + day.name;
+    document.getElementById('modalDate').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+    // Build exercise inputs
+    const container = document.getElementById('exerciseInputs');
+    container.innerHTML = '';
+
+    const notSetup = SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE';
+    if (notSetup) {
+      container.insertAdjacentHTML('beforebegin', `
+        <div class="setup-warning">
+          <strong>⚠️ Google Sheets Not Connected Yet</strong>
+          <p>You can still fill in your sets below and save once you add the Apps Script URL. Check the setup instructions file.</p>
+        </div>
+      `);
+    }
+
+    day.exercises.forEach((ex, i) => {
+      const div = document.createElement('div');
+      div.className = 'ex-log-block';
+      div.innerHTML = `
+        <div class="ex-log-name">${ex}</div>
+        <div class="sets-wrapper" id="sets-${i}">
+          ${makeSetRow(1)}${makeSetRow(2)}${makeSetRow(3)}
+        </div>
+        <button class="add-set-btn" onclick="addSet(${i})">+ Add Set</button>
+      `;
+      container.appendChild(div);
+    });
+
+    document.getElementById('historySection').style.display = 'none';
+    document.getElementById('inputSection').style.display = 'block';
+    document.getElementById('saveBtn').textContent = '💾 Save to Google Sheets';
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('logModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function makeSetRow(num) {
+    return `
+      <div class="set-row">
+        <span class="set-label">Set ${num}</span>
+        <input type="number" class="w-input" placeholder="kg" step="0.5" min="0" inputmode="decimal">
+        <span class="set-x">×</span>
+        <input type="number" class="r-input" placeholder="reps" min="0" inputmode="numeric">
+      </div>`;
+  }
+
+  function addSet(i) {
+    const w = document.getElementById('sets-' + i);
+    const n = w.querySelectorAll('.set-row').length + 1;
+    w.insertAdjacentHTML('beforeend', makeSetRow(n));
+  }
+
+  function closeModal() {
+    document.getElementById('logModal').classList.remove('active');
+    document.body.style.overflow = '';
+    // Remove any setup warning
+    const warn = document.querySelector('.setup-warning');
+    if (warn) warn.remove();
+  }
+
+  async function saveSession() {
+    const day = workoutDays[currentDayIdx];
+    const today = new Date().toISOString().split('T')[0];
+    const entries = [];
+
+    day.exercises.forEach((ex, i) => {
+      const rows = document.getElementById('sets-' + i).querySelectorAll('.set-row');
+      rows.forEach((row, j) => {
+        const w = row.querySelector('.w-input').value.trim();
+        const r = row.querySelector('.r-input').value.trim();
+        if (w !== '' || r !== '') {
+          entries.push({
+            date: today,
+            day: day.label + ' - ' + day.name,
+            exercise: ex,
+            setNo: j + 1,
+            weight: parseFloat(w) || 0,
+            reps: parseInt(r) || 0
+          });
+        }
+      });
+    });
+
+    if (entries.length === 0) {
+      alert('Please enter at least one set before saving.');
+      return;
+    }
+
+    if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+      alert('⚠️ Apps Script URL not set yet!\n\nPlease follow the setup instructions in the Code.gs file, deploy the script, and paste the URL at the top of this HTML file where it says YOUR_APPS_SCRIPT_URL_HERE.');
+      return;
+    }
+
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = '⏳ Saving...';
+    btn.disabled = true;
+
+    try {
+      // Hidden form submission — bypasses CORS completely, works from file://
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = SCRIPT_URL;
+      form.target = 'hidden_save_frame';
+      form.style.display = 'none';
+
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'entries';
+      input.value = JSON.stringify(entries);
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(() => document.body.removeChild(form), 2000);
+
+      // Wait 1.5s then confirm (form has no response we can read)
+      setTimeout(() => {
+        btn.textContent = `✅ Saved ${entries.length} sets!`;
+        setTimeout(() => {
+          btn.textContent = '💾 Save to Google Sheets';
+          btn.disabled = false;
+        }, 3000);
+      }, 1500);
+
+    } catch (err) {
+      alert('Error: ' + err.message);
+      btn.textContent = '💾 Save to Google Sheets';
+      btn.disabled = false;
+    }
+  }
+
+  async function loadHistory() {
+    const day = workoutDays[currentDayIdx];
+    const hist = document.getElementById('historySection');
+    document.getElementById('inputSection').style.display = 'none';
+    hist.style.display = 'block';
+    hist.innerHTML = '<div class="hist-empty">⏳ Loading history...</div>';
+
+    if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+      hist.innerHTML = `
+        <div class="hist-top">
+          <span class="hist-top-title">History</span>
+          <button class="hist-back-btn" onclick="showInputs()">← Back</button>
+        </div>
+        <div class="hist-empty">⚠️ Connect Google Sheets first to see history.</div>`;
+      return;
+    }
+
+    try {
+      const url = SCRIPT_URL + '?day=' + encodeURIComponent(day.label + ' - ' + day.name);
+      const res = await fetch(url);
+      const json = await res.json();
+
+      if (!json.data || json.data.length === 0) {
+        hist.innerHTML = `
+          <div class="hist-top">
+            <span class="hist-top-title">History</span>
+            <button class="hist-back-btn" onclick="showInputs()">← Back</button>
+          </div>
+          <div class="hist-empty">No sessions logged yet.<br>Log your first session today! 💪</div>`;
+        return;
+      }
+
+      // Group by date → exercise
+      const byDate = {};
+      json.data.forEach(e => {
+        if (!byDate[e.date]) byDate[e.date] = {};
+        if (!byDate[e.date][e.exercise]) byDate[e.date][e.exercise] = [];
+        byDate[e.date][e.exercise].push(e);
+      });
+
+      let html = `
+        <div class="hist-top">
+          <span class="hist-top-title">History — ${day.name}</span>
+          <button class="hist-back-btn" onclick="showInputs()">← Back</button>
+        </div>`;
+
+      Object.keys(byDate).sort().reverse().forEach(date => {
+        html += `<div class="hist-date-group"><div class="hist-date">📅 ${date}</div>`;
+        Object.keys(byDate[date]).forEach(ex => {
+          const sets = byDate[date][ex];
+          const setsText = sets.map(s => `${s.weight}kg×${s.reps}`).join(' &nbsp;|&nbsp; ');
+          html += `
+            <div class="hist-ex-row">
+              <div class="hist-ex-name">${ex}</div>
+              <div class="hist-sets-row">${setsText}</div>
+            </div>`;
+        });
+        html += `</div>`;
+      });
+
+      hist.innerHTML = html;
+    } catch (err) {
+      hist.innerHTML = `
+        <div class="hist-top">
+          <span class="hist-top-title">History</span>
+          <button class="hist-back-btn" onclick="showInputs()">← Back</button>
+        </div>
+        <div class="hist-empty" style="color:var(--accent4)">Error loading: ${err.message}</div>`;
+    }
+  }
+
+  function showInputs() {
+    document.getElementById('historySection').style.display = 'none';
+    document.getElementById('inputSection').style.display = 'block';
+  }
+
+  function switchTab(tab,el){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+    el.classList.add('active');
+  }
+  function switchOption(group,opt,el){
+    document.querySelectorAll('[id^="'+group+'-"]').forEach(p=>p.classList.remove('active'));
+    document.getElementById(group+'-'+opt).classList.add('active');
+    el.closest('.card').querySelectorAll('.opt-tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  function selectDay(idx,el){
+    document.querySelectorAll('.day-card').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('.workout-detail').forEach(d=>d.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('day-'+idx).classList.add('active');
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('logModal').addEventListener('click', function(e){
+    if (e.target === this) closeModal();
+  });
+</script>
+</body>
+</html>
