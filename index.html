@@ -912,7 +912,7 @@
 
     try {
       const url = SCRIPT_URL + '?day=' + encodeURIComponent(day.label + ' - ' + day.name);
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: 'include' });
       const json = await res.json();
 
       if (!json.data || json.data.length === 0) {
