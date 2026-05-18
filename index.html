@@ -651,7 +651,14 @@
   .save-inline-btn { width:100%; background:var(--accent); color:#000; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:14px; cursor:pointer; font-family:var(--font-body); margin-top:16px; }
   .save-inline-btn:disabled { opacity:0.6; cursor:not-allowed; }
 
-  /* ACCORDION EXERCISE INPUTS */
+  /* SKELETON LOADER */
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .skel-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .skel { border-radius:8px; background:linear-gradient(90deg,var(--surface2) 25%,rgba(255,255,255,0.06) 50%,var(--surface2) 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; }
+  .skel-label { width:42px; height:16px; border-radius:4px; }
+  .skel-input { height:38px; width:75px; }
+  .skel-x { width:14px; height:14px; border-radius:3px; }
+  .skel-note { font-size:11px; color:var(--muted); font-family:var(--font-mono); text-align:center; padding:6px 0 2px; }
   .exercise-item.clickable { cursor:pointer; user-select:none; }
   .exercise-item.clickable:hover { border-left-color:var(--accent); background:rgba(240,192,64,0.04); }
   .exercise-item.open { border-left-color:var(--accent) !important; background:rgba(240,192,64,0.08) !important; border-radius:8px 8px 0 0; }
@@ -712,7 +719,7 @@
 
 <script>
   // ─── PASTE YOUR APPS SCRIPT URL HERE AFTER DEPLOYMENT ───
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytsR-6O9DB-xjIuBjF6dCWHwl4rYe8HjOCvJTJIF7mK9ivyFk2tBHtFCsSEAm7UGdS/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaoX9CEgwluKXo9iKSHotk7tpPGoymJS2lDCS5Kr8RIPnKXSKHh0SsaX5krqyugeA9/exec';
   // ────────────────────────────────────────────────────────
 
   const workoutDays = {
@@ -793,15 +800,15 @@
       item.onclick = () => toggleExercise(idx, i);
     });
 
-    // Build hidden input panels
+    // Build hidden input panels — skeleton shown until data loads
     let html = '';
     day.exercises.forEach((ex, i) => {
       html += `
         <div class="ex-input-panel" id="panel-${idx}-${i}" style="display:none">
           <div class="sets-wrapper" id="isets-${idx}-${i}">
-            ${makeSetRow(1)}${makeSetRow(2)}${makeSetRow(3)}
+            ${makeSkeleton()}
           </div>
-          <div class="ex-panel-actions">
+          <div class="ex-panel-actions" id="actions-${idx}-${i}" style="display:none">
             <button class="add-set-btn" onclick="addInlineSet(${idx},${i})">+ Add Set</button>
             <button class="save-ex-btn" id="savebtn-${idx}-${i}" onclick="saveExercise(${idx},${i},'${ex}')">💾 Save</button>
             <span class="ex-saved-tag" id="savedtag-${idx}-${i}"></span>
@@ -844,40 +851,64 @@
       const exName = day.exercises[exIdx];
       const cached = sessionCache[dayKey] && sessionCache[dayKey][exName];
       if (cached) {
-        prefillSets(dayIdx, exIdx, cached);
+        prefillSets(dayIdx, exIdx, cached); // instant, no skeleton
       } else {
-        fetchAndPrefill(dayIdx, exIdx, dayKey, exName);
+        fetchAndPrefill(dayIdx, exIdx, dayKey, exName); // skeleton shown until done
       }
     }
+  }
+
+  function makeSkeleton(rows = 3) {
+    let html = '<div class="skel-note">⏳ Loading last session...</div>';
+    for (let i = 0; i < rows; i++) {
+      html += `<div class="skel-row">
+        <div class="skel skel-label"></div>
+        <div class="skel skel-input"></div>
+        <div class="skel skel-x"></div>
+        <div class="skel skel-input"></div>
+      </div>`;
+    }
+    return html;
+  }
+
+  function showEmptyInputs(dayIdx, exIdx) {
+    const wrapper = document.getElementById('isets-' + dayIdx + '-' + exIdx);
+    wrapper.innerHTML = makeSetRow(1) + makeSetRow(2) + makeSetRow(3);
+    document.getElementById('actions-' + dayIdx + '-' + exIdx).style.display = 'flex';
   }
 
   async function fetchAndPrefill(dayIdx, exIdx, dayKey, exName) {
     try {
       const url = SCRIPT_URL + '?day=' + encodeURIComponent(dayKey) + '&exercise=' + encodeURIComponent(exName);
       const res = await fetch(url);
-      if (!res.ok) return;
+      if (!res.ok) { showEmptyInputs(dayIdx, exIdx); return; }
       const json = await res.json();
-      if (!json.data || json.data.length === 0) return;
+
+      if (!json.data || json.data.length === 0) {
+        showEmptyInputs(dayIdx, exIdx);
+        return;
+      }
 
       const sets = json.data.sort((a, b) => a.setNo - b.setNo);
-
       if (!sessionCache[dayKey]) sessionCache[dayKey] = {};
       sessionCache[dayKey][exName] = sets;
-
       prefillSets(dayIdx, exIdx, sets);
-    } catch(e) { /* silently fail */ }
+
+    } catch(e) { showEmptyInputs(dayIdx, exIdx); }
   }
 
   function prefillSets(dayIdx, exIdx, sets) {
-    if (!sets || sets.length === 0) return;
+    if (!sets || sets.length === 0) { showEmptyInputs(dayIdx, exIdx); return; }
     const wrapper = document.getElementById('isets-' + dayIdx + '-' + exIdx);
 
-    // Add rows if needed
-    while (wrapper.querySelectorAll('.set-row').length < sets.length) {
-      const n = wrapper.querySelectorAll('.set-row').length + 1;
-      wrapper.insertAdjacentHTML('beforeend', makeSetRow(n));
-    }
+    // Replace skeleton with actual input rows
+    let html = '';
+    sets.forEach((set, j) => {
+      html += makeSetRow(j + 1);
+    });
+    wrapper.innerHTML = html;
 
+    // Fill values
     const rows = wrapper.querySelectorAll('.set-row');
     sets.forEach((set, j) => {
       if (rows[j]) {
@@ -886,7 +917,9 @@
       }
     });
 
-    // Show subtle indicator
+    // Show actions + last session tag
+    const actions = document.getElementById('actions-' + dayIdx + '-' + exIdx);
+    if (actions) actions.style.display = 'flex';
     const tag = document.getElementById('savedtag-' + dayIdx + '-' + exIdx);
     if (tag) tag.textContent = '↩ last session';
   }
