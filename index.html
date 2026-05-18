@@ -131,15 +131,15 @@
     <span class="badge badge-red">🏋️ Mon Tue Wed Fri Sat</span>
   </div>
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('diet',this)">🥗 Diet Plan</div>
-    <div class="tab" onclick="switchTab('workout',this)">🏋️ Workout Split</div>
+    <div class="tab active" onclick="switchTab('workout',this)">🏋️ Workout Split</div>
+    <div class="tab" onclick="switchTab('diet',this)">🥗 Diet Plan</div>
   </div>
 </div>
 
 <div class="content">
 
 <!-- ===== DIET ===== -->
-<div class="section active" id="diet">
+<div class="section" id="diet">
 
   <p class="section-label">🏋️ Gym Days — Mon · Tue · Wed · Fri · Sat</p>
 
@@ -516,7 +516,7 @@
 </div>
 
 <!-- ===== WORKOUT ===== -->
-<div class="section" id="workout">
+<div class="section active" id="workout">
 
   <div class="note" style="margin-bottom:20px">
     <strong>Restructured Split:</strong> Legs shifted to Saturday · Rest days Thursday &amp; Sunday · Tricep overlap Tue+Wed noted — skip cable overhead extension on Wed if fatigued.
@@ -545,7 +545,7 @@
         <div class="exercise-item"><span class="ex-num">05</span><span class="ex-name">Bicep Curls</span><span class="ex-muscle badge badge-green">Biceps</span></div>
         <div class="exercise-item"><span class="ex-num">06</span><span class="ex-name">Hammer Curls</span><span class="ex-muscle badge badge-green">Biceps</span></div>
       </div>
-      <button class="log-session-btn" onclick="openLogModal(0)">📝 Log Today's Session</button>
+      <div class="inline-log-section" id="log-section-0"></div>
     </div>
   </div>
 
@@ -560,7 +560,7 @@
         <div class="exercise-item"><span class="ex-num">05</span><span class="ex-name">Tricep Pushdown</span><span class="ex-muscle badge badge-green">Triceps</span></div>
         <div class="exercise-item"><span class="ex-num">06</span><span class="ex-name">Cable Overhead Extension</span><span class="ex-muscle badge badge-green">Triceps</span></div>
       </div>
-      <button class="log-session-btn" onclick="openLogModal(1)">📝 Log Today's Session</button>
+      <div class="inline-log-section" id="log-section-1"></div>
     </div>
   </div>
 
@@ -576,7 +576,7 @@
         <div class="exercise-item"><span class="ex-num">06</span><span class="ex-name">Incline Bicep Curl</span><span class="ex-muscle badge badge-blue">Biceps</span></div>
       </div>
       <div class="note">⚠️ <strong>Tricep overlap:</strong> Hit Tue &amp; Wed back to back. Skip cable overhead extension on Wed if fatigued.</div>
-      <button class="log-session-btn" onclick="openLogModal(2)">📝 Log Today's Session</button>
+      <div class="inline-log-section" id="log-section-2"></div>
     </div>
   </div>
 
@@ -599,13 +599,13 @@
         <div class="exercise-item"><span class="ex-num">06</span><span class="ex-name">Traps</span><span class="ex-muscle badge badge-blue">Traps</span></div>
       </div>
       <div class="note">✅ Chest: Tue → Fri = <strong>3 days rest</strong> · Back: Mon → Fri = <strong>4 days rest</strong></div>
-      <button class="log-session-btn" onclick="openLogModal(4)">📝 Log Today's Session</button>
+      <div class="inline-log-section" id="log-section-4"></div>
     </div>
   </div>
 
   <div class="workout-detail" id="day-5">
     <div class="card">
-      <div class="card-header"><div class="card-icon icon-green">🦵</div><div><div class="card-title">DAY 5 — LEGS</div><div class="card-subtitle">Saturday · Lower body</div></div></div>
+      <div class="card-icon icon-green">🦵</div><div><div class="card-title">DAY 5 — LEGS</div><div class="card-subtitle">Saturday · Lower body</div></div>
       <div class="exercise-list">
         <div class="exercise-item"><span class="ex-num">01</span><span class="ex-name">Leg Curl</span><span class="ex-muscle badge badge-green">Hamstrings</span></div>
         <div class="exercise-item"><span class="ex-num">02</span><span class="ex-name">Leg Extension</span><span class="ex-muscle badge badge-green">Quads</span></div>
@@ -613,7 +613,7 @@
         <div class="exercise-item"><span class="ex-num">04</span><span class="ex-name">Calf Raises</span><span class="ex-muscle badge badge-green">Calves</span></div>
       </div>
       <div class="note">✅ <strong>Best placement:</strong> Saturday legs = full recovery Sun + Mon before upper body again. 🔥</div>
-      <button class="log-session-btn" onclick="openLogModal(5)">📝 Log Today's Session</button>
+      <div class="inline-log-section" id="log-section-5"></div>
     </div>
   </div>
 
@@ -670,7 +670,22 @@
 </div>
 
 <style>
-  /* MODAL */
+  /* INLINE LOG SECTION */
+  .inline-log-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .log-section-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 1px; color: var(--accent); margin-bottom: 16px; }
+  .save-inline-btn { width:100%; background:var(--accent); color:#000; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:14px; cursor:pointer; font-family:var(--font-body); margin-top:16px; }
+  .save-inline-btn:disabled { opacity:0.6; cursor:not-allowed; }
+
+  /* ACCORDION EXERCISE INPUTS */
+  .exercise-item.clickable { cursor:pointer; user-select:none; }
+  .exercise-item.clickable:hover { border-left-color:var(--accent); background:rgba(240,192,64,0.04); }
+  .exercise-item.open { border-left-color:var(--accent) !important; background:rgba(240,192,64,0.08) !important; border-radius:8px 8px 0 0; }
+  .ex-chevron { margin-left:auto; font-size:12px; color:var(--muted); flex-shrink:0; }
+  .ex-input-panel { background:var(--surface2); border:1px solid var(--border); border-top:none; border-radius:0 0 8px 8px; padding:14px 14px 10px; margin-bottom:8px; }
+  .ex-panel-actions { display:flex; gap:10px; margin-top:10px; align-items:center; }
+  .save-ex-btn { flex:1; background:var(--accent); color:#000; border:none; border-radius:8px; padding:10px; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--font-body); }
+  .save-ex-btn:disabled { opacity:0.6; cursor:not-allowed; }
+  .ex-saved-tag { font-family:var(--font-mono); font-size:11px; color:var(--accent2); }
   .modal { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.88); backdrop-filter:blur(4px); }
   .modal.active { display:flex; align-items:flex-end; }
   @media(min-width:640px){ .modal.active{ align-items:center; justify-content:center; } }
@@ -987,17 +1002,115 @@
     el.closest('.card').querySelectorAll('.opt-tab').forEach(t=>t.classList.remove('active'));
     el.classList.add('active');
   }
-  function selectDay(idx,el){
-    document.querySelectorAll('.day-card').forEach(c=>c.classList.remove('active'));
-    document.querySelectorAll('.workout-detail').forEach(d=>d.classList.remove('active'));
+  function selectDay(idx, el) {
+    document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.workout-detail').forEach(d => d.classList.remove('active'));
     el.classList.add('active');
-    document.getElementById('day-'+idx).classList.add('active');
+    document.getElementById('day-' + idx).classList.add('active');
+    buildLogSection(idx);
   }
 
-  // Close modal on backdrop click
-  document.getElementById('logModal').addEventListener('click', function(e){
-    if (e.target === this) closeModal();
-  });
+  function buildLogSection(idx) {
+    const day = workoutDays[idx];
+    const container = document.getElementById('log-section-' + idx);
+    if (!day || !container || container.dataset.built) return;
+    container.dataset.built = 'true';
+
+    // Make each exercise-item clickable
+    const items = document.getElementById('day-' + idx).querySelectorAll('.exercise-item');
+    items.forEach((item, i) => {
+      item.classList.add('clickable');
+      const chev = document.createElement('span');
+      chev.className = 'ex-chevron';
+      chev.id = 'chev-' + idx + '-' + i;
+      chev.textContent = '▼';
+      item.appendChild(chev);
+      item.onclick = () => toggleExercise(idx, i);
+    });
+
+    // Build hidden input panels
+    let html = '';
+    day.exercises.forEach((ex, i) => {
+      html += `
+        <div class="ex-input-panel" id="panel-${idx}-${i}" style="display:none">
+          <div class="sets-wrapper" id="isets-${idx}-${i}">
+            ${makeSetRow(1)}${makeSetRow(2)}${makeSetRow(3)}
+          </div>
+          <div class="ex-panel-actions">
+            <button class="add-set-btn" onclick="addInlineSet(${idx},${i})">+ Add Set</button>
+            <button class="save-ex-btn" id="savebtn-${idx}-${i}" onclick="saveExercise(${idx},${i},'${ex}')">💾 Save</button>
+            <span class="ex-saved-tag" id="savedtag-${idx}-${i}"></span>
+          </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  buildLogSection(0);
+
+  function toggleExercise(dayIdx, exIdx) {
+    const day = workoutDays[dayIdx];
+    if (!day) return;
+    const panel = document.getElementById('panel-' + dayIdx + '-' + exIdx);
+    const isOpen = panel.style.display !== 'none';
+
+    // Close all
+    day.exercises.forEach((_, i) => {
+      const p = document.getElementById('panel-' + dayIdx + '-' + i);
+      const c = document.getElementById('chev-'  + dayIdx + '-' + i);
+      const items = document.getElementById('day-' + dayIdx).querySelectorAll('.exercise-item');
+      if (p) p.style.display = 'none';
+      if (c) c.textContent = '▼';
+      if (items[i]) items[i].classList.remove('open');
+    });
+
+    // Open clicked if was closed
+    if (!isOpen) {
+      panel.style.display = 'block';
+      document.getElementById('chev-' + dayIdx + '-' + exIdx).textContent = '▲';
+      const items = document.getElementById('day-' + dayIdx).querySelectorAll('.exercise-item');
+      if (items[exIdx]) items[exIdx].classList.add('open');
+    }
+  }
+
+  function addInlineSet(dayIdx, exIdx) {
+    const w = document.getElementById('isets-' + dayIdx + '-' + exIdx);
+    const n = w.querySelectorAll('.set-row').length + 1;
+    w.insertAdjacentHTML('beforeend', makeSetRow(n));
+  }
+
+  function saveExercise(dayIdx, exIdx, exerciseName) {
+    const day = workoutDays[dayIdx];
+    const today = new Date().toISOString().split('T')[0];
+    const entries = [];
+
+    document.getElementById('isets-' + dayIdx + '-' + exIdx).querySelectorAll('.set-row').forEach((row, j) => {
+      const w = row.querySelector('.w-input').value.trim();
+      const r = row.querySelector('.r-input').value.trim();
+      if (w !== '' || r !== '') {
+        entries.push({ date: today, day: day.label + ' - ' + day.name, exercise: exerciseName, setNo: j+1, weight: parseFloat(w)||0, reps: parseInt(r)||0 });
+      }
+    });
+
+    if (entries.length === 0) { alert('Enter at least one set first.'); return; }
+
+    const btn = document.getElementById('savebtn-' + dayIdx + '-' + exIdx);
+    const tag = document.getElementById('savedtag-' + dayIdx + '-' + exIdx);
+    btn.textContent = '⏳'; btn.disabled = true;
+
+    const form = document.createElement('form');
+    form.method = 'POST'; form.action = SCRIPT_URL; form.target = 'hidden_save_frame'; form.style.display = 'none';
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'entries'; inp.value = JSON.stringify(entries);
+    form.appendChild(inp); document.body.appendChild(form); form.submit();
+    setTimeout(() => { if (form.parentNode) document.body.removeChild(form); }, 2000);
+
+    setTimeout(() => {
+      btn.textContent = '✅ Saved';
+      tag.textContent = entries.map(e => `${e.weight}kg×${e.reps}`).join(' | ');
+      setTimeout(() => { btn.textContent = '💾 Save'; btn.disabled = false; }, 3000);
+    }, 800);
+  }
 </script>
 </body>
 </html>
